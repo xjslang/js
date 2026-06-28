@@ -14,17 +14,12 @@ import (
 var STRICT_EQ = token.RegisterType("===")
 
 func Parse(input []byte) (*js.Program, error) {
-	p := xjs.NewBuilder().
-		Install(Plugin).
-		Build(input)
+	p := xjs.PluginBuilder().Install(Plugin).Build(input)
 	return js.ParseProgram(p)
 }
 
 func Print(result ast.Node, opts ...printer.Option) (string, error) {
-	pr := &printer.Printer{}
-	pr.UsePrinter(xjs.Printer)
-	pr.UsePrinter(Printer)
-	pr.Init(opts...)
+	pr := xjs.PrinterBuilder().UsePrinter(Printer).Build(opts...)
 	pr.Print(result)
 	return pr.Output()
 }
