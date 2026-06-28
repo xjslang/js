@@ -14,7 +14,8 @@ import (
 var STRICT_EQ = token.RegisterType("===")
 
 func Parse(input []byte) (*js.Program, error) {
-	p := xjs.NewBuilder().
+	p := builder.New().
+		Install(xjs.Plugin).
 		Install(Plugin).
 		Build(input)
 	return js.ParseProgram(p)
