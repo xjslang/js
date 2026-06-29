@@ -31,21 +31,64 @@ func Plugin(b *builder.Builder) {
 		if tok, err = next(); err != nil {
 			return
 		}
-		if tok.Type == token.EQ && sc.CurrentChar() == '=' {
-			sc.AdvanceChar()
-			tok.Type = STRICT_EQ
-			tok.Literal = "==="
+		switch tok.Type {
+		case token.IDENT:
+			switch tok.Literal {
+			case "try":
+				tok.Type = TRY
+			case "catch":
+				tok.Type = CATCH
+			case "finally":
+				tok.Type = FINALLY
+			}
+		case token.EQ:
+			if sc.CurrentChar() == '=' {
+				sc.AdvanceChar()
+				tok.Type = STRICT_EQ
+				tok.Literal = "==="
+			}
 		}
 		return
 	})
 	b.UseBinaryParser(func(p *parser.Parser, left ast.Expr, next func(left ast.Expr) (ast.Expr, error)) (ast.Expr, error) {
-		if p.CurrentToken.Type == STRICT_EQ {
+		switch p.CurrentToken.Type {
+		case STRICT_EQ:
 			return js.ParseBinaryExpr(p, left)
+		case token.DOT:
+			op := p.CurrentToken
+			p.AdvanceToken()
+			var right ast.Expr
+			switch p.CurrentToken.Type {
+			case TRY, CATCH, FINALLY:
+				// try/catch/finally are treated as normal variables
+				right = &js.Variable{Name: p.CurrentToken}
+				p.AdvanceToken()
+			default:
+				// parse normally
+				var err error
+				if right, err = js.ParseRightExpr(p, op.Type.Precedence()); err != nil {
+					return nil, err
+				}
+			}
+			return &js.BinaryExpr{Left: left, Op: op, Right: right}, nil
 		}
 		return next(left)
+	})
+	b.UseStmtParser(func(p *parser.Parser, next func() (ast.Stmt, error)) (ast.Stmt, error) {
+		switch p.CurrentToken.Type {
+		case TRY:
+			return ParseTryCatch(p)
+		}
+		return next()
 	})
 }
 
 func Printer(pr *printer.Printer, node ast.Node, next func(node ast.Node) error) error {
-	return next(node)
+	switch v := node.(type) {
+	case *TryCatchStmt:
+		PrintTryCatch(pr, v)
+	default:
+		return next(node)
+	}
+	return nil
 }
