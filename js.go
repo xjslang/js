@@ -22,10 +22,10 @@ func Parse(input []byte) (*js.Program, error) {
 }
 
 func Print(result ast.Node, opts ...printer.Option) (string, error) {
-	pr := &printer.Printer{}
-	pr.UsePrinter(xjs.Printer)
-	pr.UsePrinter(Printer)
-	pr.Init(opts...)
+	pr := printer.NewBuilder().
+		UsePrinter(xjs.Printer).
+		UsePrinter(Printer).
+		Build(opts...)
 	pr.Print(result)
 	return pr.Output()
 }
