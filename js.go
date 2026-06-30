@@ -11,10 +11,7 @@ import (
 	"github.com/xjslang/xjs/token"
 )
 
-var (
-	NEW       = token.RegisterType("new")
-	STRICT_EQ = token.RegisterType("===")
-)
+var STRICT_EQ = token.RegisterType("===")
 
 func Parse(input []byte) (*js.Program, error) {
 	p := PluginBuilder().Build(input)
@@ -29,7 +26,6 @@ func Print(result ast.Node, opts ...printer.Option) (string, error) {
 
 func PluginBuilder() *plugin.Builder {
 	return xjs.PluginBuilder().Install(func(b *plugin.Builder) {
-		token.RegisterUnaryType(NEW)
 		token.RegisterBinaryType(STRICT_EQ, token.EQ.Precedence())
 
 		b.UseScanner(func(sc *scanner.Scanner, next func() (token.Token, error)) (tok token.Token, err error) {
@@ -57,8 +53,6 @@ func PluginBuilder() *plugin.Builder {
 					tok.Type = DEFAULT
 				case "throw":
 					tok.Type = THROW
-				case "new":
-					tok.Type = NEW
 				}
 			case token.EQ:
 				if sc.CurrentChar() == '=' {
@@ -68,13 +62,6 @@ func PluginBuilder() *plugin.Builder {
 				}
 			}
 			return
-		})
-		b.UseUnaryParser(func(p *parser.Parser, next func() (ast.Expr, error)) (ast.Expr, error) {
-			switch p.CurrentToken.Type {
-			case NEW:
-				return ParseNewExpr(p)
-			}
-			return next()
 		})
 		b.UseBinaryParser(func(p *parser.Parser, left ast.Expr, next func(left ast.Expr) (ast.Expr, error)) (ast.Expr, error) {
 			switch p.CurrentToken.Type {
@@ -114,8 +101,6 @@ func PrinterBuilder() *printer.Builder {
 			PrintSwitchStmt(pr, v)
 		case *ThrowStmt:
 			PrintThrowStmt(pr, v)
-		case *NewExpr:
-			PrintNewExpr(pr, v)
 		default:
 			return next(node)
 		}
