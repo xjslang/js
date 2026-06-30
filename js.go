@@ -54,23 +54,6 @@ func Plugin(b *builder.Builder) {
 		switch p.CurrentToken.Type {
 		case STRICT_EQ:
 			return js.ParseBinaryExpr(p, left)
-		case token.DOT:
-			op := p.CurrentToken
-			p.AdvanceToken()
-			var right ast.Expr
-			switch p.CurrentToken.Type {
-			case TRY, CATCH, FINALLY:
-				// try/catch/finally are treated as normal variables
-				right = &js.Variable{Name: p.CurrentToken}
-				p.AdvanceToken()
-			default:
-				// parse normally
-				var err error
-				if right, err = js.ParseRightExpr(p, op.Type.Precedence()); err != nil {
-					return nil, err
-				}
-			}
-			return &js.BinaryExpr{Left: left, Op: op, Right: right}, nil
 		}
 		return next(left)
 	})

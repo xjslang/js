@@ -34,9 +34,3 @@ try {
 } finally /*c4*/ {
   console.log("cleanup");
 }
-
-// edge cases
-// catch / finally are treated as identifiers after '.'
-promise.try();
-promise.catch();
-promise.finally();
