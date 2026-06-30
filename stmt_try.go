@@ -14,7 +14,7 @@ var (
 	FINALLY = token.RegisterType("finally")
 )
 
-type TryCatchStmt struct {
+type TryStmt struct {
 	ast.BaseStmt
 	Layout struct {
 		Try     token.Token
@@ -30,12 +30,12 @@ type TryCatchStmt struct {
 }
 
 // A semicolon at the end is not necessary.
-func (node *TryCatchStmt) SelfClosing() bool {
+func (node *TryStmt) SelfClosing() bool {
 	return true
 }
 
-func ParseTryCatch(p *parser.Parser) (node *TryCatchStmt, err error) {
-	node = &TryCatchStmt{}
+func ParseTryStmt(p *parser.Parser) (node *TryStmt, err error) {
+	node = &TryStmt{}
 	if node.Layout.Try, err = p.Expect(TRY); err != nil {
 		return
 	}
@@ -72,7 +72,7 @@ func ParseTryCatch(p *parser.Parser) (node *TryCatchStmt, err error) {
 	return
 }
 
-func PrintTryCatch(p *printer.Printer, node *TryCatchStmt) {
+func PrintTryStmt(p *printer.Printer, node *TryStmt) {
 	p.LnPrint(node.Layout.Try)
 	p.SpPrint(node.Try)
 	if node.Catch != nil {

@@ -60,7 +60,7 @@ func Plugin(b *builder.Builder) {
 	b.UseStmtParser(func(p *parser.Parser, next func() (ast.Stmt, error)) (ast.Stmt, error) {
 		switch p.CurrentToken.Type {
 		case TRY:
-			return ParseTryCatch(p)
+			return ParseTryStmt(p)
 		}
 		return next()
 	})
@@ -68,8 +68,8 @@ func Plugin(b *builder.Builder) {
 
 func Printer(pr *printer.Printer, node ast.Node, next func(node ast.Node) error) error {
 	switch v := node.(type) {
-	case *TryCatchStmt:
-		PrintTryCatch(pr, v)
+	case *TryStmt:
+		PrintTryStmt(pr, v)
 	default:
 		return next(node)
 	}
