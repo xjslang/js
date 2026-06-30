@@ -51,6 +51,8 @@ func PluginBuilder() *plugin.Builder {
 					tok.Type = CASE
 				case "default":
 					tok.Type = DEFAULT
+				case "throw":
+					tok.Type = THROW
 				}
 			case token.EQ:
 				if sc.CurrentChar() == '=' {
@@ -78,6 +80,8 @@ func PluginBuilder() *plugin.Builder {
 				return ParseTryStmt(p)
 			case SWITCH:
 				return ParseSwitchStmt(p)
+			case THROW:
+				return ParseThrowStmt(p)
 			}
 			return next()
 		})
@@ -95,6 +99,8 @@ func PrinterBuilder() *printer.Builder {
 			PrintTryStmt(pr, v)
 		case *SwitchStmt:
 			PrintSwitchStmt(pr, v)
+		case *ThrowStmt:
+			PrintThrowStmt(pr, v)
 		default:
 			return next(node)
 		}
