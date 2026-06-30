@@ -40,6 +40,12 @@ func Plugin(b *builder.Builder) {
 				tok.Type = CATCH
 			case "finally":
 				tok.Type = FINALLY
+			case "switch":
+				tok.Type = SWITCH
+			case "case":
+				tok.Type = CASE
+			case "default":
+				tok.Type = DEFAULT
 			}
 		case token.EQ:
 			if sc.CurrentChar() == '=' {
@@ -61,6 +67,8 @@ func Plugin(b *builder.Builder) {
 		switch p.CurrentToken.Type {
 		case TRY:
 			return ParseTryStmt(p)
+		case SWITCH:
+			return ParseSwitchStmt(p)
 		}
 		return next()
 	})
@@ -70,6 +78,8 @@ func Printer(pr *printer.Printer, node ast.Node, next func(node ast.Node) error)
 	switch v := node.(type) {
 	case *TryStmt:
 		PrintTryStmt(pr, v)
+	case *SwitchStmt:
+		PrintSwitchStmt(pr, v)
 	default:
 		return next(node)
 	}

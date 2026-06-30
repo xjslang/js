@@ -18,6 +18,21 @@ func TestTryCatch(t *testing.T) {
 	})
 }
 
+func TestSwitchStmt(t *testing.T) {
+	t.Run("multiple default clauses", func(t *testing.T) {
+		input := `switch(val) {
+			default:
+				console.log('default')
+			case 1:
+				console.log('aaa')
+			default:
+				console.log('default')
+		}`
+		_, err := js.Parse([]byte(input))
+		require.ErrorContains(t, err, "multiple default clauses")
+	})
+}
+
 func TestLanguageFeatures(t *testing.T) {
 	pattern := filepath.Join("testdata", "*.js")
 	files, err := filepath.Glob(pattern)
