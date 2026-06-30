@@ -35,6 +35,10 @@ func PluginBuilder() *plugin.Builder {
 			switch tok.Type {
 			case token.IDENT:
 				switch tok.Literal {
+				case "const":
+					tok.Type = CONST
+				case "var":
+					tok.Type = VAR
 				case "try":
 					tok.Type = TRY
 				case "catch":
@@ -66,6 +70,10 @@ func PluginBuilder() *plugin.Builder {
 		})
 		b.UseStmtParser(func(p *parser.Parser, next func() (ast.Stmt, error)) (ast.Stmt, error) {
 			switch p.CurrentToken.Type {
+			case CONST:
+				return ParseConstStmt(p)
+			case VAR:
+				return ParseVarStmt(p)
 			case TRY:
 				return ParseTryStmt(p)
 			case SWITCH:
@@ -79,6 +87,10 @@ func PluginBuilder() *plugin.Builder {
 func PrinterBuilder() *printer.Builder {
 	return xjs.PrinterBuilder().UsePrinter(func(pr *printer.Printer, node ast.Node, next func(node ast.Node) error) error {
 		switch v := node.(type) {
+		case *ConstStmt:
+			PrintConstStmt(pr, v)
+		case *VarStmt:
+			PrintVarStmt(pr, v)
 		case *TryStmt:
 			PrintTryStmt(pr, v)
 		case *SwitchStmt:
