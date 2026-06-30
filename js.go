@@ -3,9 +3,9 @@ package js
 import (
 	"github.com/xjslang/xjs"
 	"github.com/xjslang/xjs/ast"
-	"github.com/xjslang/xjs/builder"
 	"github.com/xjslang/xjs/js"
 	"github.com/xjslang/xjs/parser"
+	"github.com/xjslang/xjs/plugin"
 	"github.com/xjslang/xjs/printer"
 	"github.com/xjslang/xjs/scanner"
 	"github.com/xjslang/xjs/token"
@@ -14,74 +14,78 @@ import (
 var STRICT_EQ = token.RegisterType("===")
 
 func Parse(input []byte) (*js.Program, error) {
-	p := xjs.PluginBuilder().Install(Plugin).Build(input)
+	p := PluginBuilder().Build(input)
 	return js.ParseProgram(p)
 }
 
 func Print(result ast.Node, opts ...printer.Option) (string, error) {
-	pr := xjs.PrinterBuilder().UsePrinter(Printer).Build(opts...)
+	pr := PrinterBuilder().Build(opts...)
 	pr.Print(result)
 	return pr.Output()
 }
 
-func Plugin(b *builder.Builder) {
-	token.RegisterBinaryType(STRICT_EQ, token.EQ.Precedence())
+func PluginBuilder() *plugin.Builder {
+	return xjs.PluginBuilder().Install(func(b *plugin.Builder) {
+		token.RegisterBinaryType(STRICT_EQ, token.EQ.Precedence())
 
-	b.UseScanner(func(sc *scanner.Scanner, next func() (token.Token, error)) (tok token.Token, err error) {
-		if tok, err = next(); err != nil {
+		b.UseScanner(func(sc *scanner.Scanner, next func() (token.Token, error)) (tok token.Token, err error) {
+			if tok, err = next(); err != nil {
+				return
+			}
+			switch tok.Type {
+			case token.IDENT:
+				switch tok.Literal {
+				case "try":
+					tok.Type = TRY
+				case "catch":
+					tok.Type = CATCH
+				case "finally":
+					tok.Type = FINALLY
+				case "switch":
+					tok.Type = SWITCH
+				case "case":
+					tok.Type = CASE
+				case "default":
+					tok.Type = DEFAULT
+				}
+			case token.EQ:
+				if sc.CurrentChar() == '=' {
+					sc.AdvanceChar()
+					tok.Type = STRICT_EQ
+					tok.Literal = "==="
+				}
+			}
 			return
-		}
-		switch tok.Type {
-		case token.IDENT:
-			switch tok.Literal {
-			case "try":
-				tok.Type = TRY
-			case "catch":
-				tok.Type = CATCH
-			case "finally":
-				tok.Type = FINALLY
-			case "switch":
-				tok.Type = SWITCH
-			case "case":
-				tok.Type = CASE
-			case "default":
-				tok.Type = DEFAULT
+		})
+		b.UseBinaryParser(func(p *parser.Parser, left ast.Expr, next func(left ast.Expr) (ast.Expr, error)) (ast.Expr, error) {
+			switch p.CurrentToken.Type {
+			case STRICT_EQ:
+				return js.ParseBinaryExpr(p, left)
 			}
-		case token.EQ:
-			if sc.CurrentChar() == '=' {
-				sc.AdvanceChar()
-				tok.Type = STRICT_EQ
-				tok.Literal = "==="
+			return next(left)
+		})
+		b.UseStmtParser(func(p *parser.Parser, next func() (ast.Stmt, error)) (ast.Stmt, error) {
+			switch p.CurrentToken.Type {
+			case TRY:
+				return ParseTryStmt(p)
+			case SWITCH:
+				return ParseSwitchStmt(p)
 			}
-		}
-		return
-	})
-	b.UseBinaryParser(func(p *parser.Parser, left ast.Expr, next func(left ast.Expr) (ast.Expr, error)) (ast.Expr, error) {
-		switch p.CurrentToken.Type {
-		case STRICT_EQ:
-			return js.ParseBinaryExpr(p, left)
-		}
-		return next(left)
-	})
-	b.UseStmtParser(func(p *parser.Parser, next func() (ast.Stmt, error)) (ast.Stmt, error) {
-		switch p.CurrentToken.Type {
-		case TRY:
-			return ParseTryStmt(p)
-		case SWITCH:
-			return ParseSwitchStmt(p)
-		}
-		return next()
+			return next()
+		})
 	})
 }
 
-func Printer(pr *printer.Printer, node ast.Node, next func(node ast.Node) error) error {
-	switch v := node.(type) {
-	case *TryStmt:
-		PrintTryStmt(pr, v)
-	case *SwitchStmt:
-		PrintSwitchStmt(pr, v)
-	default:
-		return next(node)
-	}
-	return nil
+func PrinterBuilder() *printer.Builder {
+	return xjs.PrinterBuilder().UsePrinter(func(pr *printer.Printer, node ast.Node, next func(node ast.Node) error) error {
+		switch v := node.(type) {
+		case *TryStmt:
+			PrintTryStmt(pr, v)
+		case *SwitchStmt:
+			PrintSwitchStmt(pr, v)
+		default:
+			return next(node)
+		}
+		return nil
+	})
 }
