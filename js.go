@@ -59,6 +59,8 @@ func PluginBuilder() *plugin.Builder {
 					tok.Type = THROW
 				case "new":
 					tok.Type = NEW
+				case "import":
+					tok.Type = IMPORT
 				}
 			case token.EQ:
 				if sc.CurrentChar() == '=' {
@@ -95,6 +97,8 @@ func PluginBuilder() *plugin.Builder {
 				return ParseSwitchStmt(p)
 			case THROW:
 				return ParseThrowStmt(p)
+			case IMPORT:
+				return ParseImportStmt(p)
 			}
 			return next()
 		})
@@ -116,6 +120,8 @@ func PrinterBuilder() *printer.Builder {
 			PrintThrowStmt(pr, v)
 		case *NewExpr:
 			PrintNewExpr(pr, v)
+		case *ImportStmt:
+			PrintImportStmt(pr, v)
 		default:
 			return next(node)
 		}
