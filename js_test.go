@@ -10,7 +10,7 @@ import (
 	"github.com/xjslang/js"
 )
 
-func TestTryCatch(t *testing.T) {
+func TestTryStmt(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
 		input := `try {opendb()}`
 		_, err := js.Parse([]byte(input))
